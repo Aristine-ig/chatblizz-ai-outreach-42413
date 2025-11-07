@@ -62,6 +62,7 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
   const [manualProtein, setManualProtein] = useState('');
   const [manualCarbs, setManualCarbs] = useState('');
   const [manualFats, setManualFats] = useState('');
+  const [itemsAddedCount, setItemsAddedCount] = useState(0);
 
   const [editMode, setEditMode] = useState(false);
   const [editableData, setEditableData] = useState<AnalysisResult | null>(null);
@@ -185,6 +186,7 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
     setManualCarbs('');
     setManualFats('');
     setUseManualNutrition(false);
+    setItemsAddedCount(0);
     setEditMode(false);
     setEditableData(null);
     setError('');
@@ -197,7 +199,7 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
     setEditMode(!editMode);
   };
 
-  const analyzeManualItem = async () => {
+  const analyzeManualItem = async (keepModalOpen = false) => {
     if (!manualItemName.trim() || !manualItemQuantity.trim()) {
       setError('Please provide both item name and quantity');
       return;
@@ -231,15 +233,22 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
         });
       }
 
-      // Reset manual input form
-      setShowManualInput(false);
+      setItemsAddedCount(itemsAddedCount + 1);
+
+      // Reset manual input form fields
       setManualItemName('');
       setManualItemQuantity('');
       setManualCalories('');
       setManualProtein('');
       setManualCarbs('');
       setManualFats('');
-      setUseManualNutrition(false);
+      
+      // Close modal if not keeping it open
+      if (!keepModalOpen) {
+        setShowManualInput(false);
+        setUseManualNutrition(false);
+        setItemsAddedCount(0);
+      }
       return;
     }
 
@@ -322,10 +331,17 @@ Use realistic estimates based on standard USDA nutritional data. All macros are 
         });
       }
 
-      // Reset manual input form
-      setShowManualInput(false);
+      setItemsAddedCount(itemsAddedCount + 1);
+
+      // Reset manual input form fields
       setManualItemName('');
       setManualItemQuantity('');
+      
+      // Close modal if not keeping it open
+      if (!keepModalOpen) {
+        setShowManualInput(false);
+        setItemsAddedCount(0);
+      }
     } catch (err: any) {
       console.error('Manual item analysis error:', err);
       setError(err.message || 'Failed to analyze item. Please try again.');
@@ -767,9 +783,18 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
               </button>
             </div>
 
-            <p className="text-white/70 text-sm mb-4">
-              Describe the item that was missed or misidentified in the photo
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white/70 text-sm">
+                Describe the item that was missed or misidentified in the photo
+              </p>
+              {itemsAddedCount > 0 && (
+                <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-lg px-3 py-1">
+                  <span className="text-emerald-300 text-xs font-semibold">
+                    {itemsAddedCount} item{itemsAddedCount !== 1 ? 's' : ''} added
+                  </span>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -890,25 +915,49 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                 </div>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="space-y-2 pt-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowManualInput(false);
+                      setManualItemName('');
+                      setManualItemQuantity('');
+                      setManualCalories('');
+                      setManualProtein('');
+                      setManualCarbs('');
+                      setManualFats('');
+                      setUseManualNutrition(false);
+                      setItemsAddedCount(0);
+                      setError('');
+                    }}
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl transition-colors"
+                  >
+                    {itemsAddedCount > 0 ? 'Done' : 'Cancel'}
+                  </button>
+                  <button
+                    onClick={() => analyzeManualItem(false)}
+                    disabled={
+                      analyzingManualItem ||
+                      !manualItemName.trim() ||
+                      !manualItemQuantity.trim() ||
+                      (useManualNutrition &&
+                        (!manualCalories || !manualProtein || !manualCarbs || !manualFats))
+                    }
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    {analyzingManualItem ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      'Add & Close'
+                    )}
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => {
-                    setShowManualInput(false);
-                    setManualItemName('');
-                    setManualItemQuantity('');
-                    setManualCalories('');
-                    setManualProtein('');
-                    setManualCarbs('');
-                    setManualFats('');
-                    setUseManualNutrition(false);
-                    setError('');
-                  }}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={analyzeManualItem}
+                  onClick={() => analyzeManualItem(true)}
                   disabled={
                     analyzingManualItem ||
                     !manualItemName.trim() ||
@@ -916,16 +965,10 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                     (useManualNutrition &&
                       (!manualCalories || !manualProtein || !manualCarbs || !manualFats))
                   }
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  {analyzingManualItem ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    'Add to Analysis'
-                  )}
+                  <Plus className="w-4 h-4" />
+                  Add & Continue
                 </button>
               </div>
             </div>
