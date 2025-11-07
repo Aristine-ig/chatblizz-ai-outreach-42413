@@ -57,6 +57,12 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
   const [manualItemName, setManualItemName] = useState('');
   const [manualItemQuantity, setManualItemQuantity] = useState('');
   const [analyzingManualItem, setAnalyzingManualItem] = useState(false);
+  const [useManualNutrition, setUseManualNutrition] = useState(false);
+  const [manualCalories, setManualCalories] = useState('');
+  const [manualProtein, setManualProtein] = useState('');
+  const [manualCarbs, setManualCarbs] = useState('');
+  const [manualFats, setManualFats] = useState('');
+
   const [editMode, setEditMode] = useState(false);
   const [editableData, setEditableData] = useState<AnalysisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +180,11 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
     setShowManualInput(false);
     setManualItemName('');
     setManualItemQuantity('');
+    setManualCalories('');
+    setManualProtein('');
+    setManualCarbs('');
+    setManualFats('');
+    setUseManualNutrition(false);
     setEditMode(false);
     setEditableData(null);
     setError('');
@@ -189,6 +200,46 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
   const analyzeManualItem = async () => {
     if (!manualItemName.trim() || !manualItemQuantity.trim()) {
       setError('Please provide both item name and quantity');
+      return;
+    }
+
+    // If using manual nutrition entry, add directly without AI analysis
+    if (useManualNutrition) {
+      if (!manualCalories || !manualProtein || !manualCarbs || !manualFats) {
+        setError('Please provide all nutrition values (calories, protein, carbs, fats)');
+        return;
+      }
+
+      const newItem: FoodItem = {
+        name: manualItemName.trim(),
+        calories: parseFloat(manualCalories),
+        protein: parseFloat(manualProtein),
+        carbs: parseFloat(manualCarbs),
+        fats: parseFloat(manualFats),
+      };
+
+      if (analysisResult) {
+        const updatedItems = [...(analysisResult.items || []), newItem];
+
+        setAnalysisResult({
+          ...analysisResult,
+          items: updatedItems,
+          calories: analysisResult.calories + newItem.calories,
+          protein: analysisResult.protein + newItem.protein,
+          carbs: analysisResult.carbs + newItem.carbs,
+          fats: analysisResult.fats + newItem.fats,
+        });
+      }
+
+      // Reset manual input form
+      setShowManualInput(false);
+      setManualItemName('');
+      setManualItemQuantity('');
+      setManualCalories('');
+      setManualProtein('');
+      setManualCarbs('');
+      setManualFats('');
+      setUseManualNutrition(false);
       return;
     }
 
@@ -695,7 +746,7 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
       {/* Manual Item Input Modal */}
       {showManualInput && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 w-full max-w-md border border-white/10">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-white font-bold text-lg">Add Item Manually</h3>
               <button
@@ -703,6 +754,11 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                   setShowManualInput(false);
                   setManualItemName('');
                   setManualItemQuantity('');
+                  setManualCalories('');
+                  setManualProtein('');
+                  setManualCarbs('');
+                  setManualFats('');
+                  setUseManualNutrition(false);
                   setError('');
                 }}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -742,6 +798,92 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                 />
               </div>
 
+              <div className="border-t border-white/10 pt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useManualNutrition}
+                    onChange={(e) => setUseManualNutrition(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                  />
+                  <span className="text-white text-sm font-medium">
+                    Enter nutrition values manually
+                  </span>
+                </label>
+                <p className="text-white/50 text-xs mt-1 ml-7">
+                  Skip AI analysis and add exact nutrition data
+                </p>
+              </div>
+
+              {useManualNutrition && (
+                <div className="space-y-3 bg-white/5 p-4 rounded-lg border border-white/10">
+                  <div>
+                    <label className="flex items-center text-white text-sm font-medium mb-2">
+                      <Flame className="w-4 h-4 mr-2 text-orange-400" />
+                      Calories (kcal)
+                    </label>
+                    <input
+                      type="number"
+                      value={manualCalories}
+                      onChange={(e) => setManualCalories(e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:border-emerald-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="flex flex-col text-white text-xs font-medium mb-2">
+                        <Beef className="w-3 h-3 mb-1 text-red-400" />
+                        Protein (g)
+                      </label>
+                      <input
+                        type="number"
+                        value={manualProtein}
+                        onChange={(e) => setManualProtein(e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-white placeholder-white/50 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex flex-col text-white text-xs font-medium mb-2">
+                        <Cookie className="w-3 h-3 mb-1 text-amber-400" />
+                        Carbs (g)
+                      </label>
+                      <input
+                        type="number"
+                        value={manualCarbs}
+                        onChange={(e) => setManualCarbs(e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-white placeholder-white/50 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex flex-col text-white text-xs font-medium mb-2">
+                        <Droplet className="w-3 h-3 mb-1 text-yellow-400" />
+                        Fats (g)
+                      </label>
+                      <input
+                        type="number"
+                        value={manualFats}
+                        onChange={(e) => setManualFats(e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-2 text-white placeholder-white/50 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div className="bg-red-500/20 border border-red-500 text-white p-3 rounded-lg text-sm">
                   {error}
@@ -754,6 +896,11 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                     setShowManualInput(false);
                     setManualItemName('');
                     setManualItemQuantity('');
+                    setManualCalories('');
+                    setManualProtein('');
+                    setManualCarbs('');
+                    setManualFats('');
+                    setUseManualNutrition(false);
                     setError('');
                   }}
                   className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-3 rounded-xl transition-colors"
@@ -762,7 +909,13 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                 </button>
                 <button
                   onClick={analyzeManualItem}
-                  disabled={analyzingManualItem || !manualItemName.trim() || !manualItemQuantity.trim()}
+                  disabled={
+                    analyzingManualItem ||
+                    !manualItemName.trim() ||
+                    !manualItemQuantity.trim() ||
+                    (useManualNutrition &&
+                      (!manualCalories || !manualProtein || !manualCarbs || !manualFats))
+                  }
                   className="flex-1 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {analyzingManualItem ? (
