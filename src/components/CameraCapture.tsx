@@ -66,6 +66,8 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
 
   const [editMode, setEditMode] = useState(false);
   const [editableData, setEditableData] = useState<AnalysisResult | null>(null);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [editableItem, setEditableItem] = useState<FoodItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,6 +199,69 @@ export default function CameraCapture({ userId, onClose, onFoodLogged, userGoal 
       setEditableData(analysisResult);
     }
     setEditMode(!editMode);
+  };
+
+  const startEditingItem = (index: number, item: FoodItem) => {
+    setEditingItemIndex(index);
+    setEditableItem({ ...item });
+  };
+
+  const saveEditedItem = () => {
+    if (editingItemIndex === null || !editableItem || !analysisResult) return;
+
+    const updatedItems = [...(analysisResult.items || [])];
+    const oldItem = updatedItems[editingItemIndex];
+    updatedItems[editingItemIndex] = editableItem;
+
+    // Recalculate totals
+    const newTotals = {
+      calories: analysisResult.calories - oldItem.calories + editableItem.calories,
+      protein: analysisResult.protein - oldItem.protein + editableItem.protein,
+      carbs: analysisResult.carbs - oldItem.carbs + editableItem.carbs,
+      fats: analysisResult.fats - oldItem.fats + editableItem.fats,
+    };
+
+    setAnalysisResult({
+      ...analysisResult,
+      items: updatedItems,
+      ...newTotals,
+    });
+
+    setEditingItemIndex(null);
+    setEditableItem(null);
+  };
+
+  const cancelEditingItem = () => {
+    setEditingItemIndex(null);
+    setEditableItem(null);
+  };
+
+  const deleteItem = (index: number) => {
+    if (!analysisResult) return;
+
+    const updatedItems = [...(analysisResult.items || [])];
+    const deletedItem = updatedItems[index];
+    updatedItems.splice(index, 1);
+
+    // Recalculate totals
+    const newTotals = {
+      calories: analysisResult.calories - deletedItem.calories,
+      protein: analysisResult.protein - deletedItem.protein,
+      carbs: analysisResult.carbs - deletedItem.carbs,
+      fats: analysisResult.fats - deletedItem.fats,
+    };
+
+    setAnalysisResult({
+      ...analysisResult,
+      items: updatedItems,
+      ...newTotals,
+    });
+
+    // If we were editing this item, cancel the edit
+    if (editingItemIndex === index) {
+      setEditingItemIndex(null);
+      setEditableItem(null);
+    }
   };
 
   const analyzeManualItem = async (keepModalOpen = false) => {
@@ -586,25 +651,116 @@ For bulking: suggest similar foods with higher protein and nutrient density.`;
                           key={index}
                           className="bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10"
                         >
-                          <div className="text-white font-medium text-sm mb-2">{item.name}</div>
-                          <div className="grid grid-cols-4 gap-2 text-xs">
-                            <div>
-                              <span className="text-orange-300">{item.calories}</span>
-                              <span className="text-white/60"> kcal</span>
+                          {editingItemIndex === index && editableItem ? (
+                            <div className="space-y-3">
+                              <input
+                                type="text"
+                                value={editableItem.name}
+                                onChange={(e) => setEditableItem({ ...editableItem, name: e.target.value })}
+                                className="w-full bg-white/10 border border-white/30 rounded-lg px-3 py-2 text-white text-sm"
+                                placeholder="Item name"
+                              />
+                              <div className="grid grid-cols-4 gap-2">
+                                <div>
+                                  <label className="text-xs text-orange-300 block mb-1">Calories</label>
+                                  <input
+                                    type="number"
+                                    value={editableItem.calories}
+                                    onChange={(e) => setEditableItem({ ...editableItem, calories: Number(e.target.value) })}
+                                    className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-white text-sm"
+                                    min="0"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-red-300 block mb-1">Protein (g)</label>
+                                  <input
+                                    type="number"
+                                    value={editableItem.protein}
+                                    onChange={(e) => setEditableItem({ ...editableItem, protein: Number(e.target.value) })}
+                                    className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-white text-sm"
+                                    min="0"
+                                    step="0.1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-amber-300 block mb-1">Carbs (g)</label>
+                                  <input
+                                    type="number"
+                                    value={editableItem.carbs}
+                                    onChange={(e) => setEditableItem({ ...editableItem, carbs: Number(e.target.value) })}
+                                    className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-white text-sm"
+                                    min="0"
+                                    step="0.1"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-yellow-300 block mb-1">Fats (g)</label>
+                                  <input
+                                    type="number"
+                                    value={editableItem.fats}
+                                    onChange={(e) => setEditableItem({ ...editableItem, fats: Number(e.target.value) })}
+                                    className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-white text-sm"
+                                    min="0"
+                                    step="0.1"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  onClick={cancelEditingItem}
+                                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium rounded-lg transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={saveEditedItem}
+                                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition-colors"
+                                >
+                                  Save
+                                </button>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-red-300">{Math.round(item.protein)}g</span>
-                              <span className="text-white/60"> protein</span>
-                            </div>
-                            <div>
-                              <span className="text-amber-300">{Math.round(item.carbs)}g</span>
-                              <span className="text-white/60"> carbs</span>
-                            </div>
-                            <div>
-                              <span className="text-yellow-300">{Math.round(item.fats)}g</span>
-                              <span className="text-white/60"> fats</span>
-                            </div>
-                          </div>
+                          ) : (
+                            <>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="text-white font-medium text-sm">{item.name}</div>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => startEditingItem(index, item)}
+                                    className="p-1 hover:bg-white/10 rounded transition-colors"
+                                    title="Edit item"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-white/70" />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteItem(index)}
+                                    className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                                    title="Delete item"
+                                  >
+                                    <X className="w-3.5 h-3.5 text-red-400" />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2 text-xs">
+                                <div>
+                                  <span className="text-orange-300">{item.calories}</span>
+                                  <span className="text-white/60"> kcal</span>
+                                </div>
+                                <div>
+                                  <span className="text-red-300">{Math.round(item.protein)}g</span>
+                                  <span className="text-white/60"> protein</span>
+                                </div>
+                                <div>
+                                  <span className="text-amber-300">{Math.round(item.carbs)}g</span>
+                                  <span className="text-white/60"> carbs</span>
+                                </div>
+                                <div>
+                                  <span className="text-yellow-300">{Math.round(item.fats)}g</span>
+                                  <span className="text-white/60"> fats</span>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
