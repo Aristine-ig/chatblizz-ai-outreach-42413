@@ -76,7 +76,9 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
-        <div className="text-emerald-600 text-lg">Loading...</div>
+        <div className="glass-effect px-8 py-6 rounded-2xl">
+          <div className="text-emerald-600 text-lg">Loading...</div>
+        </div>
       </div>
     );
   }

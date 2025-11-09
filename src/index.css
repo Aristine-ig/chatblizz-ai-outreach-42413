@@ -25,5 +25,20 @@
     --carbs-to: 245 158 11;
     --fats-from: 59 130 246;
     --fats-to: 37 99 235;
+    
+    /* Glassmorphism */
+    --glass-white: 0 0% 100%;
+    --glass-gray: 210 20% 95%;
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    background: linear-gradient(135deg, 
+      hsl(var(--glass-white) / 0.9) 0%, 
+      hsl(var(--glass-gray) / 0.7) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-white) / 0.3);
   }
 }
