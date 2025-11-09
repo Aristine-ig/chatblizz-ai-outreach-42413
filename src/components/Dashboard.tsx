@@ -42,6 +42,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSocial, setShowSocial] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showAddFoodModal, setShowAddFoodModal] = useState(false);
   const [editGoals, setEditGoals] = useState({
     calories: 0,
     protein: 0,
@@ -653,29 +654,65 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
         )}
       </div>
 
-      <div className="fixed bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 sm:gap-4 z-40">
+      <div className="fixed bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-40">
         <button
-          onClick={() => setShowManualEntry(true)}
-          className="bg-white hover:bg-gray-50 text-emerald-600 rounded-full p-4 sm:p-5 shadow-2xl transition-all hover:scale-110 active:scale-95"
-          title="Add manually"
-        >
-          <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
-        </button>
-        <button
-          onClick={() => setShowBarcodeScanner(true)}
-          className="bg-white hover:bg-gray-50 text-teal-600 rounded-full p-4 sm:p-5 shadow-2xl transition-all hover:scale-110 active:scale-95"
-          title="Scan barcode"
-        >
-          <ScanLine className="w-6 h-6 sm:w-7 sm:h-7" />
-        </button>
-        <button
-          onClick={() => setShowCamera(true)}
+          onClick={() => setShowAddFoodModal(true)}
           className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full p-5 sm:p-6 shadow-2xl transition-all hover:scale-110 active:scale-95"
-          title="Scan with camera"
+          title="Add Food"
         >
-          <Camera className="w-7 h-7 sm:w-8 sm:h-8" />
+          <Plus className="w-7 h-7 sm:w-8 sm:h-8" />
         </button>
       </div>
+
+      {showAddFoodModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-effect rounded-3xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Add Food</h2>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  setShowAddFoodModal(false);
+                  setShowCamera(true);
+                }}
+                className="glass-effect rounded-2xl p-6 hover:shadow-xl transition-all group"
+              >
+                <Camera className="w-12 h-12 text-emerald-600 mb-3 mx-auto group-hover:scale-110 transition-transform" />
+                <div className="text-base font-semibold text-gray-800">Scan Camera</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowAddFoodModal(false);
+                  setShowBarcodeScanner(true);
+                }}
+                className="glass-effect rounded-2xl p-6 hover:shadow-xl transition-all group"
+              >
+                <ScanLine className="w-12 h-12 text-teal-600 mb-3 mx-auto group-hover:scale-110 transition-transform" />
+                <div className="text-base font-semibold text-gray-800">Scan Barcode</div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowAddFoodModal(false);
+                setShowManualEntry(true);
+              }}
+              className="glass-effect rounded-2xl p-6 hover:shadow-xl transition-all group w-full mt-4"
+            >
+              <Plus className="w-12 h-12 text-gray-700 mb-3 mx-auto group-hover:scale-110 transition-transform" />
+              <div className="text-base font-semibold text-gray-800">Add Manually</div>
+            </button>
+
+            <button
+              onClick={() => setShowAddFoodModal(false)}
+              className="w-full mt-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {showManualEntry && (
         <ManualFoodEntry userId={userId} onClose={() => setShowManualEntry(false)} onFoodLogged={handleFoodLogged} />
