@@ -285,7 +285,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 glass-effect">
       <div className="max-w-4xl mx-auto p-3 sm:p-4 pb-28 sm:pb-24">
         <div className="flex justify-between items-center mb-4 sm:mb-6 pt-2 sm:pt-4">
           <div>
