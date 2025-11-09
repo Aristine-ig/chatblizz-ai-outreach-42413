@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase, UserProfile, FoodLog, calculateNutrition } from '../lib/supabase';
-import { Camera, LogOut, TrendingUp, Flame, Beef, Cookie, Droplet, ArrowLeftRight, Settings, History, Plus, Trash2, BarChart3, Image as ImageIcon, Scale, Download, ChefHat, Lightbulb, ScanLine, Menu, Bell, Users, Trophy } from 'lucide-react';
+import { Camera, LogOut, TrendingUp, Flame, Beef, Cookie, Droplet, ArrowLeftRight, Settings, History, Plus, Trash2, Image as ImageIcon, Scale, Download, ChefHat, Lightbulb, ScanLine, Menu, Bell, Users, Trophy } from 'lucide-react';
 import CameraCapture from './CameraCapture';
 import HistoryView from './HistoryView';
 import ManualFoodEntry from './ManualFoodEntry';
-import AnalyticsView from './AnalyticsView';
 import MealGallery from './MealGallery';
 import WeightTracker from './WeightTracker';
 import ExportView from './ExportView';
@@ -16,6 +15,7 @@ import SocialView from './SocialView';
 import StreakTracker from './StreakTracker';
 import AchievementsView from './AchievementsView';
 import { achievementService } from '../services/achievementService';
+import ProgressView from './ProgressView';
 
 interface DashboardProps {
   userId: string;
@@ -31,7 +31,6 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const [showHistory, setShowHistory] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showWeightTracker, setShowWeightTracker] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -43,6 +42,7 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
   const [showSocial, setShowSocial] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showAddFoodModal, setShowAddFoodModal] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
   const [editGoals, setEditGoals] = useState({
     calories: 0,
     protein: 0,
@@ -227,8 +227,18 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
     return <HistoryView userId={userId} onClose={() => setShowHistory(false)} />;
   }
 
-  if (showAnalytics) {
-    return <AnalyticsView userId={userId} onClose={() => setShowAnalytics(false)} />;
+  if (showProgress) {
+    return (
+      <ProgressView
+        userId={userId}
+        onClose={() => setShowProgress(false)}
+        userGoal={profile?.goal || 'maintain'}
+        remainingCalories={profile ? profile.daily_calories - todayCalories : 0}
+        remainingProtein={profile ? profile.daily_protein - todayProtein : 0}
+        remainingCarbs={profile ? profile.daily_carbs - todayCarbs : 0}
+        remainingFat={profile ? profile.daily_fats - todayFats : 0}
+      />
+    );
   }
 
   if (showGallery) {
@@ -344,11 +354,11 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
         <div className="hidden sm:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
           <button
-            onClick={() => setShowAnalytics(true)}
+            onClick={() => setShowProgress(true)}
             className="bg-white/95 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 hover:shadow-xl transition-all group"
           >
-            <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mb-2 mx-auto group-hover:scale-110 transition-transform" />
-            <div className="text-xs sm:text-sm font-semibold text-gray-800">Analytics</div>
+            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 mb-2 mx-auto group-hover:scale-110 transition-transform" />
+            <div className="text-xs sm:text-sm font-semibold text-gray-800">Progress</div>
           </button>
 
           <button
@@ -747,13 +757,13 @@ export default function Dashboard({ userId, onLogout }: DashboardProps) {
 
               <button
                 onClick={() => {
-                  setShowAnalytics(true);
+                  setShowProgress(true);
                   setShowMobileSidebar(false);
                 }}
                 className="w-full flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all"
               >
-                <BarChart3 className="w-6 h-6 text-blue-500" />
-                <span className="font-medium text-gray-800">Analytics</span>
+                <TrendingUp className="w-6 h-6 text-emerald-500" />
+                <span className="font-medium text-gray-800">Progress</span>
               </button>
 
               <button
